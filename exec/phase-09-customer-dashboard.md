@@ -22,7 +22,7 @@ Phase 8 (foundation).
 
 ## Deliverables
 
-- Customer dashboard demonstrating the *book → wait for vendor/ops → confirmed* flow end-to-end
+- Customer dashboard demonstrating the _book → wait for vendor/ops → confirmed_ flow end-to-end
 
 ## Definition of Done
 

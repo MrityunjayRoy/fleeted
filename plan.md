@@ -11,6 +11,7 @@ Build a fully TypeScript, production-grade-style demo: **Express backend + Next.
 ## Scope
 
 **In scope**
+
 - Ride booking by customer (model, pickup/dropoff, time, distance, price)
 - Automatic vendor matching on booking (vendor must have the model, an available car, an available chauffeur)
 - Vendor accept flow: pick a specific car + chauffeur
@@ -23,6 +24,7 @@ Build a fully TypeScript, production-grade-style demo: **Express backend + Next.
 - DB access behind repository interfaces so SQLite can be swapped for Postgres/Mongo later
 
 **Out of scope (demo)**
+
 - Real multi-user auth / passwords / OAuth
 - Payments & invoices
 - Complex fare engine (flat base + per-km only)
@@ -32,21 +34,21 @@ Build a fully TypeScript, production-grade-style demo: **Express backend + Next.
 
 ## Tech stack decisions
 
-| Concern | Decision |
-|---|---|
-| Repo | pnpm monorepo: `packages/server`, `packages/web`, `packages/shared` |
-| Backend | Express (TypeScript, strict) |
-| Frontend | Next.js App Router + Tailwind |
-| Real-time | Socket.IO (server push to role rooms) |
-| DB | SQLite via Drizzle ORM, behind repository interfaces (facade) |
-| Validation | Zod schemas shared between server & web (`packages/shared`) |
-| DI | Hand-rolled composition root (typed factories, no decorators) |
-| Events | Typed in-process domain events; WS gateway + notification service subscribe |
-| Auth | Role-switcher login issuing JWT; middleware enforces role |
-| Tests | Vitest + supertest (in-memory SQLite) |
-| Tooling | concurrently for dev, tsc strict typecheck, ESLint + Prettier |
-| Locale | Seed data in INR with Indian city names & names |
-| UI | Plain Tailwind components (no UI library deps) |
+| Concern    | Decision                                                                    |
+| ---------- | --------------------------------------------------------------------------- |
+| Repo       | pnpm monorepo: `packages/server`, `packages/web`, `packages/shared`         |
+| Backend    | Express (TypeScript, strict)                                                |
+| Frontend   | Next.js App Router + Tailwind                                               |
+| Real-time  | Socket.IO (server push to role rooms)                                       |
+| DB         | SQLite via Drizzle ORM, behind repository interfaces (facade)               |
+| Validation | Zod schemas shared between server & web (`packages/shared`)                 |
+| DI         | Hand-rolled composition root (typed factories, no decorators)               |
+| Events     | Typed in-process domain events; WS gateway + notification service subscribe |
+| Auth       | Role-switcher login issuing JWT; middleware enforces role                   |
+| Tests      | Vitest + supertest (in-memory SQLite)                                       |
+| Tooling    | concurrently for dev, tsc strict typecheck, ESLint + Prettier               |
+| Locale     | Seed data in INR with Indian city names & names                             |
+| UI         | Plain Tailwind components (no UI library deps)                              |
 
 ## Ride lifecycle
 
@@ -66,21 +68,21 @@ PENDING → MATCHING → CONFIRMED → STARTED → COMPLETED
 
 All phase documents live in `exec/` and are the authoritative execution detail.
 
-| # | Phase | Major deliverable | Est. effort | Depends on |
-|---|---|---|---|---|
-| 1 | Monorepo scaffolding & tooling | Workspace boots: Express hello + Next hello run together | 2–3h | — |
-| 2 | Shared package (schemas & types) | Zod DTOs + enums shared by server & web | 3–4h | 1 |
-| 3 | Database facade | Drizzle schema, migrations, repository interfaces + SQLite impls, DI container | 6–8h | 2 |
-| 4 | Auth & seed data | Role-switcher JWT login, guards, seeded vendors/cars/chauffeurs/users | 3–4h | 3 |
-| 5 | Domain services | Matching, rides, offers, ops approval, driver, cancellation + domain events | 6–8h | 4 |
-| 6 | REST API | Controllers, routes, validation, error handling, response DTOs | 4–5h | 5 |
-| 7 | Real-time layer | Socket.IO gateway, role rooms, event fan-out | 3–4h | 5 |
-| 8 | Frontend foundation | Next app shell, login, API client, SWR + socket hooks, UI primitives | 5–6h | 2, 6 |
-| 9 | Customer dashboard | Model catalog, booking form, my rides, live status | 4–5h | 8 |
-| 10 | Vendor dashboard | Ride-request stream, accept with car+chauffeur, availability toggles | 5–6h | 8 |
-| 11 | Ops dashboard | Auto-populated ride oversight, offer approval, cancellation | 5–6h | 8 |
-| 12 | Driver dashboard | Assigned rides, start/complete, live notifications | 3–4h | 8 |
-| 13 | Tests, hardening & demo polish | Full test suite, green typecheck/build, demo runbook + README | 5–6h | 3–12 |
+| #   | Phase                            | Major deliverable                                                              | Est. effort | Depends on |
+| --- | -------------------------------- | ------------------------------------------------------------------------------ | ----------- | ---------- |
+| 1   | Monorepo scaffolding & tooling   | Workspace boots: Express hello + Next hello run together                       | 2–3h        | —          |
+| 2   | Shared package (schemas & types) | Zod DTOs + enums shared by server & web                                        | 3–4h        | 1          |
+| 3   | Database facade                  | Drizzle schema, migrations, repository interfaces + SQLite impls, DI container | 6–8h        | 2          |
+| 4   | Auth & seed data                 | Role-switcher JWT login, guards, seeded vendors/cars/chauffeurs/users          | 3–4h        | 3          |
+| 5   | Domain services                  | Matching, rides, offers, ops approval, driver, cancellation + domain events    | 6–8h        | 4          |
+| 6   | REST API                         | Controllers, routes, validation, error handling, response DTOs                 | 4–5h        | 5          |
+| 7   | Real-time layer                  | Socket.IO gateway, role rooms, event fan-out                                   | 3–4h        | 5          |
+| 8   | Frontend foundation              | Next app shell, login, API client, SWR + socket hooks, UI primitives           | 5–6h        | 2, 6       |
+| 9   | Customer dashboard               | Model catalog, booking form, my rides, live status                             | 4–5h        | 8          |
+| 10  | Vendor dashboard                 | Ride-request stream, accept with car+chauffeur, availability toggles           | 5–6h        | 8          |
+| 11  | Ops dashboard                    | Auto-populated ride oversight, offer approval, cancellation                    | 5–6h        | 8          |
+| 12  | Driver dashboard                 | Assigned rides, start/complete, live notifications                             | 3–4h        | 8          |
+| 13  | Tests, hardening & demo polish   | Full test suite, green typecheck/build, demo runbook + README                  | 5–6h        | 3–12       |
 
 **Total estimated effort:** ~55–73 hours.
 

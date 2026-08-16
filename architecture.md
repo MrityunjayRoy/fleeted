@@ -39,6 +39,7 @@ fleeted/
 ```
 
 **`packages/shared`** — everything both sides need, defined once:
+
 - Enums: `Role` (CUSTOMER | VENDOR | OPS | DRIVER), `RideStatus` (PENDING | MATCHING | CONFIRMED | STARTED | COMPLETED | CANCELLED), `OfferStatus` (PENDING | ACCEPTED | REJECTED | RELEASED), `CarCategory`
 - Zod request schemas (login, create ride, accept offer, approve offer, start/complete, availability toggle)
 - Inferred response DTO types (RideDto, RideOfferDto, CarModelDto, VendorDto, ChauffeurDto, NotificationDto, ...)
@@ -87,15 +88,15 @@ src/
 
 ## 4. Design patterns & rationale
 
-| Pattern | Where | Why |
-|---|---|---|
-| **Repository / DB facade** | `db/interfaces/*` + `db/repositories/*` | All persistence behind interfaces. SQLite via Drizzle today; Postgres = new impl of same interfaces + swap DI binding; Mongo = one adapter per repository. Services never touch SQL. |
-| **Dependency injection (composition root)** | `config/container.ts` | Hand-rolled typed factories (no decorators/reflection). Explicit wiring, fully type-safe, trivial to substitute fakes in tests. |
-| **Domain events (port/adapter)** | `domain/events.ts` | Services emit typed events (`RideCreated`, `OfferAccepted`, `RideConfirmed`, `RideCancelled`, `RideStarted`, `RideCompleted`). NotificationService (persistence) and WsGateway (push) subscribe. Keeps Socket.IO and DB out of business logic. |
-| **DTO boundary** | `dto/` | Entities never leave the server; wire format is explicit, versioned by zod inference, mappable per-route. |
-| **Validation at the edge** | `middleware/validate.ts` | All input validated by shared zod schemas before reaching services. |
-| **Error model** | `domain/errors/` | `AppError(statusCode, code, message)` base + typed subclasses (`OfferAlreadyAcceptedError`, `CarNotAvailableError`, ...). Global handler maps to JSON; WS layer maps to `error` events. |
-| **Thin controllers / fat services** | controllers call one service method, map DTO | Business logic testable without HTTP. |
+| Pattern                                     | Where                                        | Why                                                                                                                                                                                                                                            |
+| ------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Repository / DB facade**                  | `db/interfaces/*` + `db/repositories/*`      | All persistence behind interfaces. SQLite via Drizzle today; Postgres = new impl of same interfaces + swap DI binding; Mongo = one adapter per repository. Services never touch SQL.                                                           |
+| **Dependency injection (composition root)** | `config/container.ts`                        | Hand-rolled typed factories (no decorators/reflection). Explicit wiring, fully type-safe, trivial to substitute fakes in tests.                                                                                                                |
+| **Domain events (port/adapter)**            | `domain/events.ts`                           | Services emit typed events (`RideCreated`, `OfferAccepted`, `RideConfirmed`, `RideCancelled`, `RideStarted`, `RideCompleted`). NotificationService (persistence) and WsGateway (push) subscribe. Keeps Socket.IO and DB out of business logic. |
+| **DTO boundary**                            | `dto/`                                       | Entities never leave the server; wire format is explicit, versioned by zod inference, mappable per-route.                                                                                                                                      |
+| **Validation at the edge**                  | `middleware/validate.ts`                     | All input validated by shared zod schemas before reaching services.                                                                                                                                                                            |
+| **Error model**                             | `domain/errors/`                             | `AppError(statusCode, code, message)` base + typed subclasses (`OfferAlreadyAcceptedError`, `CarNotAvailableError`, ...). Global handler maps to JSON; WS layer maps to `error` events.                                                        |
+| **Thin controllers / fat services**         | controllers call one service method, map DTO | Business logic testable without HTTP.                                                                                                                                                                                                          |
 
 ## 5. Domain model
 
@@ -125,20 +126,22 @@ PENDING ────────────────────────
 
 Transitions and guards:
 
-| From | To | Trigger | Guard / side effects |
-|---|---|---|---|
-| — | PENDING | Customer books | Price computed (base + distance × perKm); stored |
-| PENDING | MATCHING | Matching runs | One `RideOffer`(PENDING) per vendor having model + available car + available chauffeur; `ride:new` → vendor rooms |
-| MATCHING | CONFIRMED | Ops approves an offer | Offer → ACCEPTED (ops-approved); car + chauffeur locked (`ON_RIDE`/unavailable); other offers → REJECTED; `ride:confirmed` → driver + customer |
-| MATCHING | CANCELLED | Customer / ops cancels | All offers → RELEASED; car/chauffeur freed; `ride:cancelled` → all parties |
-| CONFIRMED | STARTED | Driver starts | `ride:started` → ops + customer |
-| STARTED | COMPLETED | Driver completes | Car/chauffeur freed; `ride:completed` → ops + customer |
-| CONFIRMED/STARTED | CANCELLED | Ops cancels | Same release semantics as above |
+| From              | To        | Trigger                | Guard / side effects                                                                                                                           |
+| ----------------- | --------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| —                 | PENDING   | Customer books         | Price computed (base + distance × perKm); stored                                                                                               |
+| PENDING           | MATCHING  | Matching runs          | One `RideOffer`(PENDING) per vendor having model + available car + available chauffeur; `ride:new` → vendor rooms                              |
+| MATCHING          | CONFIRMED | Ops approves an offer  | Offer → ACCEPTED (ops-approved); car + chauffeur locked (`ON_RIDE`/unavailable); other offers → REJECTED; `ride:confirmed` → driver + customer |
+| MATCHING          | CANCELLED | Customer / ops cancels | All offers → RELEASED; car/chauffeur freed; `ride:cancelled` → all parties                                                                     |
+| CONFIRMED         | STARTED   | Driver starts          | `ride:started` → ops + customer                                                                                                                |
+| STARTED           | COMPLETED | Driver completes       | Car/chauffeur freed; `ride:completed` → ops + customer                                                                                         |
+| CONFIRMED/STARTED | CANCELLED | Ops cancels            | Same release semantics as above                                                                                                                |
 
 **Cancel-after-vendor-accept** (explicitly handled): ride in MATCHING with one or more ACCEPTED offers → all offers RELEASED, car/chauffeur statuses restored, vendors + ops + driver notified. No stale locks.
 
 ### Matching rule (booking time, single pass)
+
 Vendor qualifies iff:
+
 1. owns a `VendorCar` of the requested `CarModel` with `isAvailable = true`, **and**
 2. has at least one `Chauffeur` with `status = AVAILABLE`.
 
@@ -146,26 +149,26 @@ The company fleet (`isCompany = true`) qualifies under the same rules.
 
 ## 6. REST API
 
-| Method | Path | Role | Purpose |
-|---|---|---|---|
-| POST | `/api/auth/login` | public | Role-switcher login → `{ token, role, userId }` |
-| GET | `/api/car-models` | public | Model catalog with prices |
-| POST | `/api/rides` | CUSTOMER | Book a ride (triggers matching) |
-| GET | `/api/rides/mine` | CUSTOMER/DRIVER/VENDOR | Rides scoped to the caller |
-| GET | `/api/rides/:id` | CUSTOMER/OPS | Ride detail |
-| POST | `/api/rides/:id/cancel` | CUSTOMER/OPS | Cancel ride (release offers) |
-| GET | `/api/vendors/:id/offers` | VENDOR | Pending + history offers |
-| GET | `/api/offers/:id` | VENDOR/OPS | Offer detail |
-| POST | `/api/offers/:id/accept` | VENDOR | Assign vendorCar + chauffeur |
-| GET | `/api/vendors/:id/cars` | VENDOR | Own fleet (car + chauffeur pickers) |
-| POST | `/api/vendors/:id/cars/:carId/availability` | VENDOR | Toggle car availability |
-| GET | `/api/ops/rides` | OPS | All rides (filter by status) |
-| GET | `/api/ops/rides/:id` | OPS | Ride + all offers + vendor/chauffeur/car detail |
-| POST | `/api/ops/offers/:id/approve` | OPS | Approve offer → confirm ride, reject others |
-| POST | `/api/ops/rides/:id/cancel` | OPS | Ops-side cancellation |
-| POST | `/api/driver/rides/:id/start` | DRIVER | Start ride |
-| POST | `/api/driver/rides/:id/complete` | DRIVER | Complete ride |
-| GET | `/api/notifications` | any | Unread/read notification history |
+| Method | Path                                        | Role                   | Purpose                                         |
+| ------ | ------------------------------------------- | ---------------------- | ----------------------------------------------- |
+| POST   | `/api/auth/login`                           | public                 | Role-switcher login → `{ token, role, userId }` |
+| GET    | `/api/car-models`                           | public                 | Model catalog with prices                       |
+| POST   | `/api/rides`                                | CUSTOMER               | Book a ride (triggers matching)                 |
+| GET    | `/api/rides/mine`                           | CUSTOMER/DRIVER/VENDOR | Rides scoped to the caller                      |
+| GET    | `/api/rides/:id`                            | CUSTOMER/OPS           | Ride detail                                     |
+| POST   | `/api/rides/:id/cancel`                     | CUSTOMER/OPS           | Cancel ride (release offers)                    |
+| GET    | `/api/vendors/:id/offers`                   | VENDOR                 | Pending + history offers                        |
+| GET    | `/api/offers/:id`                           | VENDOR/OPS             | Offer detail                                    |
+| POST   | `/api/offers/:id/accept`                    | VENDOR                 | Assign vendorCar + chauffeur                    |
+| GET    | `/api/vendors/:id/cars`                     | VENDOR                 | Own fleet (car + chauffeur pickers)             |
+| POST   | `/api/vendors/:id/cars/:carId/availability` | VENDOR                 | Toggle car availability                         |
+| GET    | `/api/ops/rides`                            | OPS                    | All rides (filter by status)                    |
+| GET    | `/api/ops/rides/:id`                        | OPS                    | Ride + all offers + vendor/chauffeur/car detail |
+| POST   | `/api/ops/offers/:id/approve`               | OPS                    | Approve offer → confirm ride, reject others     |
+| POST   | `/api/ops/rides/:id/cancel`                 | OPS                    | Ops-side cancellation                           |
+| POST   | `/api/driver/rides/:id/start`               | DRIVER                 | Start ride                                      |
+| POST   | `/api/driver/rides/:id/complete`            | DRIVER                 | Complete ride                                   |
+| GET    | `/api/notifications`                        | any                    | Unread/read notification history                |
 
 All requests (except login) carry `Authorization: Bearer <jwt>`. Responses are DTO-mapped JSON; errors are `{ error: { code, message } }` with proper HTTP status.
 
@@ -175,14 +178,14 @@ All requests (except login) carry `Authorization: Bearer <jwt>`. Responses are D
   - `customer:{userId}`, `driver:{userId}`, `vendor:{vendorId}`, `ops`
 - Gateway subscribes to domain events and emits:
 
-| Domain event | WS event | Rooms |
-|---|---|---|
-| RideCreated (with matches) | `ride:new` | each matching `vendor:{id}` |
-| OfferAccepted | `offer:accepted` | `ops` |
-| RideConfirmed | `ride:confirmed` | `driver:{id}`, `customer:{id}`, `ops` |
-| RideCancelled | `ride:cancelled` | vendor(s), `ops`, driver if assigned, customer |
-| RideStarted | `ride:started` | `ops`, `customer:{id}` |
-| RideCompleted | `ride:completed` | `ops`, `customer:{id}`, vendor |
+| Domain event               | WS event         | Rooms                                          |
+| -------------------------- | ---------------- | ---------------------------------------------- |
+| RideCreated (with matches) | `ride:new`       | each matching `vendor:{id}`                    |
+| OfferAccepted              | `offer:accepted` | `ops`                                          |
+| RideConfirmed              | `ride:confirmed` | `driver:{id}`, `customer:{id}`, `ops`          |
+| RideCancelled              | `ride:cancelled` | vendor(s), `ops`, driver if assigned, customer |
+| RideStarted                | `ride:started`   | `ops`, `customer:{id}`                         |
+| RideCompleted              | `ride:completed` | `ops`, `customer:{id}`, vendor                 |
 
 - Every emitted event is also **persisted** as a `Notification` row (NotificationService) so refreshed dashboards show history.
 - Acknowledgment events (`offer:accepted`, `ride:started`, ...) are also delivered back to the actor's own room for UI consistency.
@@ -244,14 +247,14 @@ web/src/
 
 ## 13. Scripts (root package.json)
 
-| Script | Action |
-|---|---|
-| `pnpm dev` | concurrently run server (`tsx watch`) + web (`next dev`) |
-| `pnpm build` | typecheck + build all packages |
-| `pnpm typecheck` | strict `tsc --noEmit` across packages |
-| `pnpm test` | vitest run in server package |
-| `pnpm seed` | run seed script against dev SQLite |
-| `pnpm lint` | eslint + prettier check |
+| Script           | Action                                                   |
+| ---------------- | -------------------------------------------------------- |
+| `pnpm dev`       | concurrently run server (`tsx watch`) + web (`next dev`) |
+| `pnpm build`     | typecheck + build all packages                           |
+| `pnpm typecheck` | strict `tsc --noEmit` across packages                    |
+| `pnpm test`      | vitest run in server package                             |
+| `pnpm seed`      | run seed script against dev SQLite                       |
+| `pnpm lint`      | eslint + prettier check                                  |
 
 ## 14. Explicitly deferred (documented in exec phase notes)
 
