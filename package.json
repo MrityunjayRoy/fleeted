@@ -1,0 +1,37 @@
+{
+  "name": "fleeted",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Luxury ride booking demo - customer, vendor, ops and driver platforms",
+  "engines": {
+    "node": ">=26.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "dev": "concurrently -k -n shared,server,web -c blue,green,magenta \"pnpm dev:shared\" \"pnpm dev:server\" \"pnpm dev:web\"",
+    "dev:shared": "pnpm --filter @fleeted/shared dev",
+    "dev:server": "pnpm --filter @fleeted/server dev",
+    "dev:web": "pnpm --filter @fleeted/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.8.1",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.67.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
