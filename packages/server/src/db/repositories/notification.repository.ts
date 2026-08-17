@@ -12,10 +12,10 @@ import { toNotification } from './mappers.js';
 export class DrizzleNotificationRepository implements INotificationRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: NewNotification): Promise<Notification> {
+  async create(input: NewNotification & { id?: string }): Promise<Notification> {
     const row: Notification = {
-      id: randomUUID(),
       ...input,
+      id: input.id ?? randomUUID(),
       read: false,
     };
     await this.db.insert(notifications).values({

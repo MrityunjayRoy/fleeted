@@ -111,6 +111,13 @@ export const AuthResponseSchema = z.object({
 });
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 
+export const MeResponseSchema = z.object({
+  role: RoleSchema,
+  userId: z.string(),
+  displayName: z.string(),
+});
+export type MeResponse = z.infer<typeof MeResponseSchema>;
+
 export const NotificationDtoSchema = z.object({
   id: z.string(),
   recipientRole: RoleSchema,

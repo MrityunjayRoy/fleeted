@@ -14,8 +14,8 @@ import { queryOffersWithDetails } from './offer-queries.js';
 export class DrizzleRideRepository implements IRideRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: NewRide): Promise<Ride> {
-    const row: Ride = { id: randomUUID(), ...input };
+  async create(input: NewRide & { id?: string }): Promise<Ride> {
+    const row: Ride = { ...input, id: input.id ?? randomUUID() };
     await this.db.insert(rides).values(row);
     return row;
   }

@@ -11,8 +11,8 @@ import { toVendor } from './mappers.js';
 export class DrizzleVendorRepository implements IVendorRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: NewVendor): Promise<Vendor> {
-    const row: Vendor = { id: randomUUID(), ...input };
+  async create(input: NewVendor & { id?: string }): Promise<Vendor> {
+    const row: Vendor = { ...input, id: input.id ?? randomUUID() };
     await this.db.insert(vendors).values(row);
     return row;
   }

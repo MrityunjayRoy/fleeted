@@ -1,7 +1,7 @@
 import type { NewRideOffer, RideOffer, RideOfferWithDetails } from '../../domain/entities/index.js';
 
 export interface IRideOfferRepository {
-  create(input: NewRideOffer): Promise<RideOffer>;
+  create(input: NewRideOffer & { id?: string }): Promise<RideOffer>;
   findById(id: string): Promise<RideOffer | null>;
   findWithDetails(id: string): Promise<RideOfferWithDetails | null>;
   listByRideId(rideId: string): Promise<RideOffer[]>;

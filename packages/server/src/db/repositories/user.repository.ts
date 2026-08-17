@@ -11,8 +11,8 @@ import { toUser } from './mappers.js';
 export class DrizzleUserRepository implements IUserRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: NewUser): Promise<User> {
-    const row: User = { id: randomUUID(), ...input };
+  async create(input: NewUser & { id?: string }): Promise<User> {
+    const row: User = { ...input, id: input.id ?? randomUUID() };
     await this.db.insert(users).values(row);
     return row;
   }

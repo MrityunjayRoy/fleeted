@@ -8,6 +8,7 @@ import {
 } from '@fleeted/shared';
 
 import type {
+  Account,
   CarModel,
   Chauffeur,
   Notification,
@@ -18,6 +19,7 @@ import type {
   VendorCar,
 } from '../../domain/entities/index.js';
 import {
+  accounts,
   carModels,
   chauffeurs,
   notifications,
@@ -27,6 +29,17 @@ import {
   vendorCars,
   vendors,
 } from '../schema/index.js';
+
+export function toAccount(row: typeof accounts.$inferSelect): Account {
+  return {
+    id: row.id,
+    role: RoleSchema.parse(row.role),
+    name: row.name,
+    ...(row.userId !== null ? { userId: row.userId } : {}),
+    ...(row.vendorId !== null ? { vendorId: row.vendorId } : {}),
+    ...(row.chauffeurId !== null ? { chauffeurId: row.chauffeurId } : {}),
+  };
+}
 
 export function toUser(row: typeof users.$inferSelect): User {
   return {

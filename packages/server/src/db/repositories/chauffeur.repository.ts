@@ -12,8 +12,8 @@ import { toChauffeur } from './mappers.js';
 export class DrizzleChauffeurRepository implements IChauffeurRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: NewChauffeur): Promise<Chauffeur> {
-    const row: Chauffeur = { id: randomUUID(), ...input };
+  async create(input: NewChauffeur & { id?: string }): Promise<Chauffeur> {
+    const row: Chauffeur = { ...input, id: input.id ?? randomUUID() };
     await this.db.insert(chauffeurs).values(row);
     return row;
   }

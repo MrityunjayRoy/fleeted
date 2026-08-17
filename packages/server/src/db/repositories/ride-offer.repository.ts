@@ -13,8 +13,8 @@ import { queryOffersWithDetails } from './offer-queries.js';
 export class DrizzleRideOfferRepository implements IRideOfferRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: NewRideOffer): Promise<RideOffer> {
-    const row: RideOffer = { id: randomUUID(), ...input };
+  async create(input: NewRideOffer & { id?: string }): Promise<RideOffer> {
+    const row: RideOffer = { ...input, id: input.id ?? randomUUID() };
     await this.db.insert(rideOffers).values(row);
     return row;
   }
