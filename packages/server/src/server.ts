@@ -1,8 +1,17 @@
 import { createApp } from './app.js';
+import { loadEnv } from './config/env.js';
+import { createContainer } from './config/container.js';
 
-const PORT = Number(process.env.PORT ?? 4000);
+const env = loadEnv();
+const PORT = env.PORT;
 
-const app = createApp();
+const container = createContainer(env.DB_PATH, {
+  runMigrations: true,
+  jwtSecret: env.JWT_SECRET,
+  jwtExpiresIn: env.JWT_EXPIRES_IN,
+});
+
+const app = createApp(container);
 
 const server = app.listen(PORT, () => {
   console.log(`[server] listening on http://localhost:${PORT}`);
