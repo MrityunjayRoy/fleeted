@@ -1,0 +1,8 @@
+import type { NewVendorCar, VendorCar } from '../../domain/entities/index.js';
+
+export interface IVendorCarRepository {
+  create(input: NewVendorCar): Promise<VendorCar>;
+  findById(id: string): Promise<VendorCar | null>;
+  findAvailableByModelId(modelId: string): Promise<VendorCar[]>;
+  updateAvailability(id: string, isAvailable: boolean): Promise<VendorCar>;
+}
