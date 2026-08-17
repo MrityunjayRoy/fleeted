@@ -1,4 +1,5 @@
 export * from './users.js';
+export * from './accounts.js';
 export * from './vendors.js';
 export * from './car-models.js';
 export * from './vendor-cars.js';
