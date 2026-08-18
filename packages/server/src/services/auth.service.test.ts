@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 
 import { createContainer, type Container } from '../config/container.js';
 import { seed } from '../db/seed.js';
-import { UnauthorizedError } from '../domain/errors.js';
+import { UnauthorizedError } from '../domain/errors/index.js';
 import { verifyToken } from '../middleware/auth.js';
 
 describe('AuthService', () => {

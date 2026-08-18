@@ -1,7 +1,7 @@
 import type { AuthResponse, LoginRequest, MeResponse } from '@fleeted/shared';
 
 import type { IAccountRepository } from '../db/interfaces/account.repository.js';
-import { UnauthorizedError } from '../domain/errors.js';
+import { UnauthorizedError } from '../domain/errors/index.js';
 import type { Account } from '../domain/entities/index.js';
 import { signToken } from '../middleware/auth.js';
 
