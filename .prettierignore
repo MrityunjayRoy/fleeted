@@ -9,3 +9,4 @@ coverage/
 *.sqlite
 *.sqlite3
 pnpm-lock.yaml
+packages/web/next-env.d.ts

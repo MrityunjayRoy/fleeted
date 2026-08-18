@@ -1,6 +1,8 @@
 import { fileURLToPath } from 'node:url';
 
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { createDbClient, type Db } from '../db/client.js';
 import { DrizzleAccountRepository } from '../db/repositories/account.repository.js';
@@ -22,6 +24,17 @@ import type { IUserRepository } from '../db/interfaces/user.repository.js';
 import type { IVendorCarRepository } from '../db/interfaces/vendor-car.repository.js';
 import type { IVendorRepository } from '../db/interfaces/vendor.repository.js';
 import { DefaultAuthService, type AuthService } from '../services/auth.service.js';
+import { DefaultMatchingService, type MatchingService } from '../services/matching.service.js';
+import { DefaultRideService, type RideService } from '../services/ride.service.js';
+import { DefaultOfferService, type OfferService } from '../services/offer.service.js';
+import { DefaultOpsService, type OpsService } from '../services/ops.service.js';
+import { DefaultDriverService, type DriverService } from '../services/driver.service.js';
+import {
+  DefaultNotificationService,
+  type NotificationService,
+} from '../services/notification.service.js';
+import { DefaultEventBus, DOMAIN_EVENT_TYPES } from '../domain/events.js';
+import * as schema from '../db/schema/index.js';
 
 export interface Repositories {
   users: IUserRepository;
@@ -35,8 +48,16 @@ export interface Repositories {
   notifications: INotificationRepository;
 }
 
+export type TransactionRunner = <T>(fn: (tx: Repositories) => Promise<T>) => Promise<T>;
+
 export interface Services {
   auth: AuthService;
+  matching: MatchingService;
+  rides: RideService;
+  offers: OfferService;
+  ops: OpsService;
+  drivers: DriverService;
+  notifications: NotificationService;
 }
 
 export interface Container {
@@ -47,6 +68,7 @@ export interface Container {
   };
   repos: Repositories;
   services: Services;
+  withTransaction: TransactionRunner;
 }
 
 export interface ContainerOptions {
@@ -67,7 +89,104 @@ export function createContainer(dbPath: string, options: ContainerOptions = {}):
     });
   }
 
-  const repos: Repositories = {
+  const queue = createQueue();
+  const repos = serialize(makeRepos(db), queue);
+
+  const config = {
+    jwtSecret: options.jwtSecret ?? DEFAULT_JWT_SECRET,
+    jwtExpiresIn: options.jwtExpiresIn ?? DEFAULT_JWT_EXPIRES_IN,
+  };
+
+  const withTransaction: TransactionRunner = (fn) =>
+    queue.run(async () => {
+      const sqlite = db.$client as Database.Database;
+      sqlite.exec('BEGIN IMMEDIATE');
+      try {
+        const txDb = drizzle(sqlite, { schema });
+        const result = await fn(makeRepos(txDb));
+        sqlite.exec('COMMIT');
+        return result;
+      } catch (err) {
+        sqlite.exec('ROLLBACK');
+        throw err;
+      }
+    });
+
+  const eventBus = new DefaultEventBus();
+  const notifications = new DefaultNotificationService(
+    repos.notifications,
+    repos.carModels,
+    repos.vendors,
+    repos.chauffeurs,
+    repos.users,
+    repos.rides,
+    repos.rideOffers,
+  );
+  for (const type of DOMAIN_EVENT_TYPES) {
+    eventBus.on(type, (event) => {
+      void notifications.persist(event).catch((err) => {
+        console.error('[notifications] persist failed:', err);
+      });
+    });
+  }
+
+  const matching = new DefaultMatchingService(
+    repos.vendorCars,
+    repos.chauffeurs,
+    repos.rideOffers,
+    repos.rides,
+    eventBus,
+  );
+
+  const services: Services = {
+    auth: new DefaultAuthService(repos.accounts, config.jwtSecret, config.jwtExpiresIn),
+    matching,
+    rides: new DefaultRideService(
+      repos.rides,
+      repos.rideOffers,
+      repos.vendorCars,
+      repos.chauffeurs,
+      repos.carModels,
+      matching,
+      eventBus,
+      withTransaction,
+    ),
+    offers: new DefaultOfferService(
+      repos.rideOffers,
+      repos.vendorCars,
+      repos.chauffeurs,
+      eventBus,
+      withTransaction,
+    ),
+    ops: new DefaultOpsService(
+      repos.rides,
+      repos.rideOffers,
+      repos.vendorCars,
+      repos.chauffeurs,
+      eventBus,
+      withTransaction,
+    ),
+    drivers: new DefaultDriverService(
+      repos.rides,
+      repos.rideOffers,
+      repos.vendorCars,
+      repos.chauffeurs,
+      eventBus,
+    ),
+    notifications,
+  };
+
+  return {
+    db,
+    config,
+    repos,
+    services,
+    withTransaction,
+  };
+}
+
+function makeRepos(db: Db): Repositories {
+  return {
     users: new DrizzleUserRepository(db),
     accounts: new DrizzleAccountRepository(db),
     vendors: new DrizzleVendorRepository(db),
@@ -78,18 +197,37 @@ export function createContainer(dbPath: string, options: ContainerOptions = {}):
     rideOffers: new DrizzleRideOfferRepository(db),
     notifications: new DrizzleNotificationRepository(db),
   };
+}
 
-  const config = {
-    jwtSecret: options.jwtSecret ?? DEFAULT_JWT_SECRET,
-    jwtExpiresIn: options.jwtExpiresIn ?? DEFAULT_JWT_EXPIRES_IN,
-  };
+interface Queue {
+  run<T>(task: () => Promise<T>): Promise<T>;
+}
 
+function createQueue(): Queue {
+  let tail: Promise<unknown> = Promise.resolve();
   return {
-    db,
-    config,
-    repos,
-    services: {
-      auth: new DefaultAuthService(repos.accounts, config.jwtSecret, config.jwtExpiresIn),
+    run<T>(task: () => Promise<T>): Promise<T> {
+      const result = tail.then(task, task);
+      tail = result.then(
+        () => undefined,
+        () => undefined,
+      );
+      return result;
     },
   };
+}
+
+function serialize(repos: Repositories, queue: Queue): Repositories {
+  const wrapped = {} as Repositories;
+  for (const [name, repo] of Object.entries(repos)) {
+    const instance = repo as object;
+    wrapped[name as keyof Repositories] = new Proxy(instance, {
+      get(obj, prop, receiver) {
+        const value = Reflect.get(obj, prop, receiver);
+        if (typeof value !== 'function') return value;
+        return (...args: unknown[]) => queue.run(() => value.apply(obj, args));
+      },
+    }) as never;
+  }
+  return wrapped;
 }

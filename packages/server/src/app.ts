@@ -3,7 +3,7 @@ import express, { type Express, type ErrorRequestHandler } from 'express';
 import { HealthResponseSchema, type HealthResponse } from '@fleeted/shared';
 
 import type { Container } from './config/container.js';
-import { AppError } from './domain/errors.js';
+import { AppError } from './domain/errors/index.js';
 import { createAuthMiddleware } from './middleware/auth.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 
