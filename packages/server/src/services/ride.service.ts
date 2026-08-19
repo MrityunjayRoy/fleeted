@@ -30,6 +30,7 @@ export interface CreateRideResult {
 
 export interface RideService {
   create(input: CreateRideInput, customerId: string): Promise<CreateRideResult>;
+  getById(id: string, actor: Actor): Promise<RideWithParticipants | null>;
   cancelByCustomer(rideId: string, customerId: string): Promise<Ride>;
   cancelByOps(rideId: string): Promise<Ride>;
   getMine(actor: Actor): Promise<RideWithParticipants[]>;
@@ -73,6 +74,15 @@ export class DefaultRideService implements RideService {
 
     const result = await this.matching.match(ride);
     return { ride: result.ride, matchedVendorIds: result.matchedVendorIds };
+  }
+
+  async getById(id: string, actor: Actor): Promise<RideWithParticipants | null> {
+    const detail = await this.rides.findWithParticipants(id);
+    if (!detail) return null;
+    if (actor.role === 'CUSTOMER' && detail.ride.customerId !== actor.customerId) {
+      return null;
+    }
+    return detail;
   }
 
   async cancelByCustomer(rideId: string, customerId: string): Promise<Ride> {

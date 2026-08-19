@@ -33,6 +33,7 @@ import {
   DefaultNotificationService,
   type NotificationService,
 } from '../services/notification.service.js';
+import { DefaultVendorService, type VendorService } from '../services/vendor.service.js';
 import { DefaultEventBus, DOMAIN_EVENT_TYPES } from '../domain/events.js';
 import * as schema from '../db/schema/index.js';
 
@@ -58,6 +59,7 @@ export interface Services {
   ops: OpsService;
   drivers: DriverService;
   notifications: NotificationService;
+  vendors: VendorService;
 }
 
 export interface Container {
@@ -174,6 +176,7 @@ export function createContainer(dbPath: string, options: ContainerOptions = {}):
       eventBus,
     ),
     notifications,
+    vendors: new DefaultVendorService(repos.vendorCars, repos.chauffeurs),
   };
 
   return {

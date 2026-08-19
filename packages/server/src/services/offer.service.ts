@@ -2,7 +2,7 @@ import type { IChauffeurRepository } from '../db/interfaces/chauffeur.repository
 import type { IRideOfferRepository } from '../db/interfaces/ride-offer.repository.js';
 import type { IVendorCarRepository } from '../db/interfaces/vendor-car.repository.js';
 import type { TransactionRunner } from '../config/container.js';
-import type { RideOffer } from '../domain/entities/index.js';
+import type { RideOffer, RideOfferWithDetails } from '../domain/entities/index.js';
 import type { EventBus } from '../domain/events.js';
 import {
   CarNotAvailableError,
@@ -21,6 +21,8 @@ export interface AcceptOfferInput {
 export interface OfferService {
   accept(offerId: string, vendorId: string, input: AcceptOfferInput): Promise<RideOffer>;
   rejectRemaining(rideId: string, winningVendorId: string): Promise<void>;
+  getById(id: string): Promise<RideOfferWithDetails | null>;
+  listByVendor(vendorId: string): Promise<RideOfferWithDetails[]>;
 }
 
 export class DefaultOfferService implements OfferService {
@@ -94,6 +96,18 @@ export class DefaultOfferService implements OfferService {
       chauffeurId: input.chauffeurId,
     });
     return accepted;
+  }
+
+  async getById(id: string): Promise<RideOfferWithDetails | null> {
+    return this.rideOffers.findWithDetails(id);
+  }
+
+  async listByVendor(vendorId: string): Promise<RideOfferWithDetails[]> {
+    const offers = await this.rideOffers.listByVendorId(vendorId);
+    const detailed = await Promise.all(
+      offers.map((offer) => this.rideOffers.findWithDetails(offer.id)),
+    );
+    return detailed.filter((item): item is RideOfferWithDetails => item !== null);
   }
 
   async rejectRemaining(rideId: string, winningVendorId: string): Promise<void> {

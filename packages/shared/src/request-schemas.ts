@@ -36,3 +36,10 @@ export const AvailabilityToggleRequestSchema = z
   })
   .strict();
 export type AvailabilityToggleRequest = z.infer<typeof AvailabilityToggleRequestSchema>;
+
+export const MarkReadRequestSchema = z
+  .object({
+    ids: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+export type MarkReadRequest = z.infer<typeof MarkReadRequestSchema>;

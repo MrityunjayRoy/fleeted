@@ -24,6 +24,11 @@ export class DrizzleChauffeurRepository implements IChauffeurRepository {
     return row ? toChauffeur(row) : null;
   }
 
+  async listByVendorId(vendorId: string): Promise<Chauffeur[]> {
+    const rows = await this.db.select().from(chauffeurs).where(eq(chauffeurs.vendorId, vendorId));
+    return rows.map(toChauffeur);
+  }
+
   async findAvailableByVendorIds(vendorIds: string[]): Promise<Chauffeur[]> {
     if (vendorIds.length === 0) return [];
     const rows = await this.db

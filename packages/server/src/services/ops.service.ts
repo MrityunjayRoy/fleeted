@@ -11,7 +11,7 @@ import { NotFoundError, RideStateTransitionError } from '../domain/errors/index.
 
 export interface OpsService {
   approveOffer(offerId: string): Promise<Ride>;
-  listRides(filter?: RideStatus): Promise<Ride[]>;
+  listRides(filter?: RideStatus): Promise<RideWithParticipants[]>;
   getRideDetail(id: string): Promise<RideWithParticipants>;
 }
 
@@ -78,8 +78,12 @@ export class DefaultOpsService implements OpsService {
     return approved;
   }
 
-  async listRides(filter?: RideStatus): Promise<Ride[]> {
-    return this.rides.listAll(filter);
+  async listRides(filter?: RideStatus): Promise<RideWithParticipants[]> {
+    const rides = await this.rides.listAll(filter);
+    const detailed = await Promise.all(
+      rides.map((ride) => this.rides.findWithParticipants(ride.id)),
+    );
+    return detailed.filter((item): item is RideWithParticipants => item !== null);
   }
 
   async getRideDetail(id: string): Promise<RideWithParticipants> {

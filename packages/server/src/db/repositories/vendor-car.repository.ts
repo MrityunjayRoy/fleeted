@@ -23,6 +23,11 @@ export class DrizzleVendorCarRepository implements IVendorCarRepository {
     return row ? toVendorCar(row) : null;
   }
 
+  async listByVendorId(vendorId: string): Promise<VendorCar[]> {
+    const rows = await this.db.select().from(vendorCars).where(eq(vendorCars.vendorId, vendorId));
+    return rows.map(toVendorCar);
+  }
+
   async findAvailableByModelId(modelId: string): Promise<VendorCar[]> {
     const rows = await this.db
       .select()

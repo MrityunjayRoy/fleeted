@@ -129,3 +129,17 @@ export const NotificationDtoSchema = z.object({
   createdAt: isoDateTime,
 });
 export type NotificationDto = z.infer<typeof NotificationDtoSchema>;
+
+export const VendorFleetDtoSchema = z.object({
+  cars: z.array(VendorCarDtoSchema),
+  chauffeurs: z.array(ChauffeurDtoSchema),
+});
+export type VendorFleetDto = z.infer<typeof VendorFleetDtoSchema>;
+
+export const ErrorResponseSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+  }),
+});
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;

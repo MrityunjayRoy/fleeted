@@ -119,7 +119,7 @@ describe('OpsService', () => {
     const { ride } = await createSClassRide(container);
 
     const matching = await container.services.ops.listRides('MATCHING');
-    expect(matching.map((r) => r.id)).toContain(ride.id);
+    expect(matching.map((r) => r.ride.id)).toContain(ride.id);
 
     const detail = await container.services.ops.getRideDetail(ride.id);
     expect(detail.ride.id).toBe(ride.id);
