@@ -105,6 +105,7 @@ export class DefaultRideService implements RideService {
       throw new RideStateTransitionError(`Cannot cancel a ride in status ${ride.status}`);
     }
 
+    let assignedChauffeurId: string | undefined;
     const cancelled = await this.withTransaction(async (tx) => {
       const fresh = await tx.rides.findById(ride.id);
       if (!fresh) throw new NotFoundError(`No ride with id "${ride.id}"`);
@@ -114,6 +115,8 @@ export class DefaultRideService implements RideService {
 
       const at = new Date().toISOString();
       const offers = await tx.rideOffers.listByRideId(ride.id);
+      const accepted = offers.find((offer) => offer.status === 'ACCEPTED');
+      assignedChauffeurId = accepted?.chauffeurId;
       for (const offer of offers) {
         if (offer.status === 'ACCEPTED' || offer.status === 'PENDING') {
           await tx.rideOffers.release(offer.id, at);
@@ -130,7 +133,11 @@ export class DefaultRideService implements RideService {
       return tx.rides.cancel(ride.id, at);
     });
 
-    this.eventBus.emit({ type: 'ride:cancelled', rideId: ride.id });
+    this.eventBus.emit({
+      type: 'ride:cancelled',
+      rideId: ride.id,
+      ...(assignedChauffeurId !== undefined ? { chauffeurId: assignedChauffeurId } : {}),
+    });
     return cancelled;
   }
 

@@ -120,7 +120,6 @@ export class DefaultNotificationService implements NotificationService {
     const ride = await this.rides.findById(event.rideId);
     const offers = await this.rideOffers.listByRideId(event.rideId);
     const vendorIds = [...new Set(offers.map((offer) => offer.vendorId))];
-    const acceptedChauffeurId = offers.find((offer) => offer.status === 'ACCEPTED')?.chauffeurId;
 
     await this.create({
       recipientRole: 'OPS',
@@ -138,10 +137,10 @@ export class DefaultNotificationService implements NotificationService {
         payload: { rideId: event.rideId },
       });
     }
-    if (acceptedChauffeurId !== undefined) {
+    if (event.chauffeurId !== undefined) {
       await this.create({
         recipientRole: 'DRIVER',
-        recipientId: acceptedChauffeurId,
+        recipientId: event.chauffeurId,
         type: 'ride:cancelled',
         message: 'Your assigned ride was cancelled',
         payload: { rideId: event.rideId },

@@ -34,7 +34,7 @@ import {
   type NotificationService,
 } from '../services/notification.service.js';
 import { DefaultVendorService, type VendorService } from '../services/vendor.service.js';
-import { DefaultEventBus, DOMAIN_EVENT_TYPES } from '../domain/events.js';
+import { DefaultEventBus, DOMAIN_EVENT_TYPES, type EventBus } from '../domain/events.js';
 import * as schema from '../db/schema/index.js';
 
 export interface Repositories {
@@ -70,6 +70,7 @@ export interface Container {
   };
   repos: Repositories;
   services: Services;
+  eventBus: EventBus;
   withTransaction: TransactionRunner;
 }
 
@@ -184,6 +185,7 @@ export function createContainer(dbPath: string, options: ContainerOptions = {}):
     config,
     repos,
     services,
+    eventBus,
     withTransaction,
   };
 }

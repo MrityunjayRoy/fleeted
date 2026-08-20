@@ -27,6 +27,7 @@ export interface RideConfirmedEvent {
 export interface RideCancelledEvent {
   type: 'ride:cancelled';
   rideId: string;
+  chauffeurId?: string;
 }
 
 export interface RideStartedEvent {
