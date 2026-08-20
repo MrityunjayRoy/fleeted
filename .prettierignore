@@ -1,10 +1,12 @@
 node_modules/
-dist/
-.next/
-out/
-build/
-coverage/
+**/dist/
+**/.next/
+**/out/
+**/build/
+**/coverage/
 *.db
+*.db-shm
+*.db-wal
 *.db-journal
 *.sqlite
 *.sqlite3
