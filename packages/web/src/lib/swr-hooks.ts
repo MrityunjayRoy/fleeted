@@ -17,7 +17,7 @@ export const SWR_KEYS = {
   carModels: '/api/car-models',
   myRides: '/api/rides/mine',
   vendorOffers: (vendorId: string) => `/api/vendors/${vendorId}/offers`,
-  vendorFleet: (vendorId: string) => `/api/vendors/${vendorId}/fleet`,
+  vendorFleet: (vendorId: string) => `/api/vendors/${vendorId}/cars`,
   opsRides: '/api/ops/rides',
   opsRideDetail: (id: string) => `/api/ops/rides/${id}`,
   notifications: '/api/notifications',

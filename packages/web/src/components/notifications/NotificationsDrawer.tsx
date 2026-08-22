@@ -81,7 +81,7 @@ export function NotificationsDrawer() {
                 </button>
               </div>
             </header>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="no-scrollbar flex-1 overflow-y-auto p-4">
               {isLoading ? (
                 <p className="py-8 text-center text-sm text-zinc-500">Loading…</p>
               ) : (notifications ?? []).length === 0 ? (

@@ -77,7 +77,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <div className="ml-64 flex min-h-screen flex-col">
-          <header className="sticky top-0 z-30 flex items-center justify-end gap-3 border-b border-zinc-800/80 bg-zinc-950/90 px-6 py-3 backdrop-blur">
+          <header className="sticky top-0 z-30 flex items-center justify-end gap-3 border-b border-zinc-800/80 bg-zinc-950 px-6 py-3">
             <NotificationsDrawer />
           </header>
           <main className="flex-1 p-8">{children}</main>

@@ -18,6 +18,9 @@ export interface Session {
   role: Role;
   userId: string;
   displayName: string;
+  customerId?: string;
+  vendorId?: string;
+  chauffeurId?: string;
 }
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
@@ -62,7 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api
       .get<MeResponse>('/api/auth/me', parsed.token)
       .then((me) => {
-        setSession({ ...parsed, role: me.role, userId: me.userId, displayName: me.displayName });
+        setSession({
+          ...parsed,
+          role: me.role,
+          userId: me.userId,
+          displayName: me.displayName,
+          ...(me.customerId !== undefined ? { customerId: me.customerId } : {}),
+          ...(me.vendorId !== undefined ? { vendorId: me.vendorId } : {}),
+          ...(me.chauffeurId !== undefined ? { chauffeurId: me.chauffeurId } : {}),
+        });
         setStatus('authenticated');
       })
       .catch((error: unknown) => {
@@ -84,6 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: result.role,
       userId: result.userId,
       displayName: result.displayName,
+      ...(result.customerId !== undefined ? { customerId: result.customerId } : {}),
+      ...(result.vendorId !== undefined ? { vendorId: result.vendorId } : {}),
+      ...(result.chauffeurId !== undefined ? { chauffeurId: result.chauffeurId } : {}),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSession(next);
