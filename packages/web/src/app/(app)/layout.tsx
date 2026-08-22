@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import type { Role } from '@fleeted/shared';
 
-import { useAuth } from '../../lib/auth';
+import { DASHBOARD_PATHS, useAuth } from '../../lib/auth';
 import { useSocket } from '../../lib/useSocket';
 import { RequireAuth } from '../../components/RequireAuth';
+import { NotificationsDrawer } from '../../components/notifications/NotificationsDrawer';
 
 const NAV: Record<Role, Array<{ href: string; label: string }>> = {
-  CUSTOMER: [{ href: '/', label: 'Book & Track' }],
+  CUSTOMER: [{ href: '/customer', label: 'Book & Track' }],
   VENDOR: [{ href: '/vendor', label: 'Vendor Dashboard' }],
   OPS: [{ href: '/ops', label: 'Ops Dashboard' }],
   DRIVER: [{ href: '/driver', label: 'Driver Dashboard' }],
@@ -30,7 +31,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen bg-zinc-950 text-zinc-100">
         <aside className="flex w-64 shrink-0 flex-col border-r border-zinc-800/80 bg-zinc-900/50">
           <div className="px-6 py-5">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
+            <Link
+              href={DASHBOARD_PATHS[session.role] ?? '/'}
+              className="text-lg font-semibold tracking-tight"
+            >
               Fleeted
               <span className="ml-2 text-xs font-normal text-amber-400">demo</span>
             </Link>
@@ -67,7 +71,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </aside>
-        <main className="flex-1 overflow-y-auto p-8">{children}</main>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <header className="flex items-center justify-end gap-3 border-b border-zinc-800/80 px-6 py-3">
+            <NotificationsDrawer />
+          </header>
+          <main className="flex-1 overflow-y-auto p-8">{children}</main>
+        </div>
       </div>
     </RequireAuth>
   );

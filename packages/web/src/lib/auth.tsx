@@ -41,7 +41,7 @@ export function readStoredSession(): Session | null {
 }
 
 export const DASHBOARD_PATHS: Record<Role, string> = {
-  CUSTOMER: '/',
+  CUSTOMER: '/customer',
   VENDOR: '/vendor',
   OPS: '/ops',
   DRIVER: '/driver',

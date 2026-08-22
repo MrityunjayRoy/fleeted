@@ -35,7 +35,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       const stored = readStoredSession();
-      router.replace(DASHBOARD_PATHS[stored?.role ?? 'CUSTOMER'] ?? '/');
+      router.replace(DASHBOARD_PATHS[stored?.role ?? 'CUSTOMER'] ?? '/customer');
     }
   }, [status, router]);
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
       setError(null);
       try {
         await login(selectedRole, account.name);
-        router.replace(DASHBOARD_PATHS[selectedRole] ?? '/');
+        router.replace(DASHBOARD_PATHS[selectedRole] ?? '/customer');
       } catch (e) {
         const message = e instanceof ApiError ? e.message : 'Sign in failed';
         setError(message);
