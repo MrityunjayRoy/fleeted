@@ -5,6 +5,8 @@ import { Server as SocketIOServer } from 'socket.io';
 import type { Container } from '../config/container.js';
 import type { AuthContext } from '../middleware/auth.js';
 import { verifyToken } from '../middleware/auth.js';
+import { WS_EVENTS } from '@fleeted/shared';
+
 import type { DomainEvent } from '../domain/events.js';
 
 export interface RealtimeGateway {
@@ -32,28 +34,28 @@ export function createRealtimeGateway(container: Container): RealtimeGateway {
   io.on('connection', (socket) => {
     const auth = socket.data.auth as AuthContext;
     for (const room of roomsFor(auth)) socket.join(room);
-    socket.emit('ready', { role: auth.role });
+    socket.emit(WS_EVENTS.READY, { role: auth.role });
   });
 
   const emit = (event: DomainEvent): void => {
     switch (event.type) {
       case 'ride:created':
         for (const vendorId of event.matchedVendorIds) {
-          io.to(`vendor:${vendorId}`).emit('ride:new', {
+          io.to(`vendor:${vendorId}`).emit(WS_EVENTS.RIDE_NEW, {
             rideId: event.ride.id,
             modelId: event.ride.modelId,
           });
         }
         break;
       case 'offer:accepted':
-        io.to(`vendor:${event.vendorId}`).emit('offer:accepted', {
+        io.to(`vendor:${event.vendorId}`).emit(WS_EVENTS.OFFER_ACCEPTED, {
           offerId: event.offerId,
           rideId: event.rideId,
           vendorId: event.vendorId,
           vendorCarId: event.vendorCarId,
           chauffeurId: event.chauffeurId,
         });
-        io.to('ops').emit('offer:accepted', {
+        io.to('ops').emit(WS_EVENTS.OFFER_ACCEPTED, {
           offerId: event.offerId,
           rideId: event.rideId,
           vendorId: event.vendorId,
@@ -83,9 +85,9 @@ export function createRealtimeGateway(container: Container): RealtimeGateway {
       vendorId: event.vendorId,
       chauffeurId: event.chauffeurId,
     };
-    io.to(`driver:${event.chauffeurId}`).emit('ride:confirmed', payload);
-    io.to('ops').emit('ride:confirmed', payload);
-    if (ride) io.to(`customer:${ride.customerId}`).emit('ride:confirmed', payload);
+    io.to(`driver:${event.chauffeurId}`).emit(WS_EVENTS.RIDE_CONFIRMED, payload);
+    io.to('ops').emit(WS_EVENTS.RIDE_CONFIRMED, payload);
+    if (ride) io.to(`customer:${ride.customerId}`).emit(WS_EVENTS.RIDE_CONFIRMED, payload);
   }
 
   async function emitCancelled(
@@ -95,19 +97,20 @@ export function createRealtimeGateway(container: Container): RealtimeGateway {
     const offers = await container.repos.rideOffers.listByRideId(event.rideId);
     const payload = { rideId: event.rideId };
     const vendorIds = [...new Set(offers.map((offer) => offer.vendorId))];
-    for (const vendorId of vendorIds) io.to(`vendor:${vendorId}`).emit('ride:cancelled', payload);
+    for (const vendorId of vendorIds)
+      io.to(`vendor:${vendorId}`).emit(WS_EVENTS.RIDE_CANCELLED, payload);
     if (event.chauffeurId !== undefined) {
-      io.to(`driver:${event.chauffeurId}`).emit('ride:cancelled', payload);
+      io.to(`driver:${event.chauffeurId}`).emit(WS_EVENTS.RIDE_CANCELLED, payload);
     }
-    if (ride) io.to(`customer:${ride.customerId}`).emit('ride:cancelled', payload);
-    io.to('ops').emit('ride:cancelled', payload);
+    if (ride) io.to(`customer:${ride.customerId}`).emit(WS_EVENTS.RIDE_CANCELLED, payload);
+    io.to('ops').emit(WS_EVENTS.RIDE_CANCELLED, payload);
   }
 
   async function emitStarted(event: Extract<DomainEvent, { type: 'ride:started' }>): Promise<void> {
     const ride = await container.repos.rides.findById(event.rideId);
     const payload = { rideId: event.rideId, chauffeurId: event.chauffeurId };
-    io.to(`driver:${event.chauffeurId}`).emit('ride:started', payload);
-    if (ride) io.to(`customer:${ride.customerId}`).emit('ride:started', payload);
+    io.to(`driver:${event.chauffeurId}`).emit(WS_EVENTS.RIDE_STARTED, payload);
+    if (ride) io.to(`customer:${ride.customerId}`).emit(WS_EVENTS.RIDE_STARTED, payload);
   }
 
   async function emitCompleted(
@@ -115,8 +118,8 @@ export function createRealtimeGateway(container: Container): RealtimeGateway {
   ): Promise<void> {
     const ride = await container.repos.rides.findById(event.rideId);
     const payload = { rideId: event.rideId, chauffeurId: event.chauffeurId };
-    io.to(`driver:${event.chauffeurId}`).emit('ride:completed', payload);
-    if (ride) io.to(`customer:${ride.customerId}`).emit('ride:completed', payload);
+    io.to(`driver:${event.chauffeurId}`).emit(WS_EVENTS.RIDE_COMPLETED, payload);
+    if (ride) io.to(`customer:${ride.customerId}`).emit(WS_EVENTS.RIDE_COMPLETED, payload);
   }
 
   container.eventBus.on('ride:created', emit);

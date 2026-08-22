@@ -6,4 +6,5 @@ export interface IAccountRepository {
   create(input: NewAccount & { id?: string }): Promise<Account>;
   findById(id: string): Promise<Account | null>;
   findByRoleAndName(role: Role, name: string): Promise<Account | null>;
+  listByRole(role: Role): Promise<Account[]>;
 }

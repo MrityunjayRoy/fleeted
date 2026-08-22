@@ -8,6 +8,7 @@ export function createAuthRouter(authService: AuthService): Router {
   const router = Router();
 
   router.post('/login', controller.login);
+  router.get('/accounts', controller.listAccounts);
   router.get('/me', controller.me);
 
   return router;

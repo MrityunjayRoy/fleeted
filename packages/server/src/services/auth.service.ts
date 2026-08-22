@@ -1,4 +1,10 @@
-import type { AuthResponse, LoginRequest, MeResponse } from '@fleeted/shared';
+import type {
+  AccountsResponse,
+  AuthResponse,
+  LoginRequest,
+  MeResponse,
+  Role,
+} from '@fleeted/shared';
 
 import type { IAccountRepository } from '../db/interfaces/account.repository.js';
 import { UnauthorizedError } from '../domain/errors/index.js';
@@ -8,6 +14,7 @@ import { signToken } from '../middleware/auth.js';
 export interface AuthService {
   login(input: LoginRequest): Promise<AuthResponse>;
   me(accountId: string): Promise<MeResponse>;
+  listAccounts(role: Role): Promise<AccountsResponse>;
 }
 
 export class DefaultAuthService implements AuthService {
@@ -36,6 +43,13 @@ export class DefaultAuthService implements AuthService {
       throw new UnauthorizedError('Account no longer exists');
     }
     return toMeResponse(account);
+  }
+
+  async listAccounts(role: Role): Promise<AccountsResponse> {
+    const accounts = await this.accounts.listByRole(role);
+    return {
+      accounts: accounts.map((account) => ({ id: account.id, name: account.name })),
+    };
   }
 }
 

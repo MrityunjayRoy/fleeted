@@ -84,4 +84,21 @@ describe('auth routes (HTTP)', () => {
     const res = await fetch(`${baseUrl}/api/auth/me`);
     expect(res.status).toBe(401);
   });
+
+  it('GET /api/auth/accounts lists seeded accounts for a role', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/accounts?role=VENDOR`);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { accounts: Array<{ id: string; name: string }> };
+    expect(body.accounts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'account-vendor-royal', name: 'Royal Rides India' }),
+      ]),
+    );
+  });
+
+  it('GET /api/auth/accounts rejects an unknown role', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/accounts?role=SUPERUSER`);
+    expect(res.status).toBe(400);
+  });
 });

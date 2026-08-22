@@ -33,4 +33,9 @@ export class DrizzleAccountRepository implements IAccountRepository {
     const row = rows[0];
     return row ? toAccount(row) : null;
   }
+
+  async listByRole(role: Role): Promise<Account[]> {
+    const rows = await this.db.select().from(accounts).where(eq(accounts.role, role));
+    return rows.map(toAccount);
+  }
 }

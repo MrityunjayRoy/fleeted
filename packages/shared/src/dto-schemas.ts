@@ -143,3 +143,19 @@ export const ErrorResponseSchema = z.object({
   }),
 });
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
+
+export const AccountSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+export type AccountSummary = z.infer<typeof AccountSummarySchema>;
+
+export const AccountsResponseSchema = z.object({
+  accounts: z.array(AccountSummarySchema),
+});
+export type AccountsResponse = z.infer<typeof AccountsResponseSchema>;
+
+export const AccountsQuerySchema = z.object({
+  role: RoleSchema,
+});
+export type AccountsQuery = z.infer<typeof AccountsQuerySchema>;

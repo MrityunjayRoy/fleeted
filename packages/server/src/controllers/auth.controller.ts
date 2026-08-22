@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { LoginRequestSchema } from '@fleeted/shared';
+import { AccountsQuerySchema, LoginRequestSchema } from '@fleeted/shared';
 
 import type { AuthService } from '../services/auth.service.js';
 
@@ -10,6 +10,12 @@ export class AuthController {
   login = async (req: Request, res: Response): Promise<void> => {
     const input = LoginRequestSchema.parse(req.body);
     const result = await this.authService.login(input);
+    res.json(result);
+  };
+
+  listAccounts = async (req: Request, res: Response): Promise<void> => {
+    const { role } = AccountsQuerySchema.parse(req.query);
+    const result = await this.authService.listAccounts(role);
     res.json(result);
   };
 

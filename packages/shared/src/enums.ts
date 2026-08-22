@@ -27,13 +27,24 @@ export const CHAUFFEUR_STATUSES = ['AVAILABLE', 'ON_RIDE', 'OFF_DUTY'] as const;
 export type ChauffeurStatus = (typeof CHAUFFEUR_STATUSES)[number];
 export const ChauffeurStatusSchema = z.enum(CHAUFFEUR_STATUSES);
 
+export const WS_EVENTS = {
+  RIDE_NEW: 'ride:new',
+  OFFER_ACCEPTED: 'offer:accepted',
+  RIDE_CONFIRMED: 'ride:confirmed',
+  RIDE_CANCELLED: 'ride:cancelled',
+  RIDE_STARTED: 'ride:started',
+  RIDE_COMPLETED: 'ride:completed',
+  READY: 'ready',
+} as const;
+export type WsEventName = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
+
 export const NOTIFICATION_TYPES = [
-  'ride:new',
-  'offer:accepted',
-  'ride:confirmed',
-  'ride:cancelled',
-  'ride:started',
-  'ride:completed',
+  WS_EVENTS.RIDE_NEW,
+  WS_EVENTS.OFFER_ACCEPTED,
+  WS_EVENTS.RIDE_CONFIRMED,
+  WS_EVENTS.RIDE_CANCELLED,
+  WS_EVENTS.RIDE_STARTED,
+  WS_EVENTS.RIDE_COMPLETED,
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 export const NotificationTypeSchema = z.enum(NOTIFICATION_TYPES);
