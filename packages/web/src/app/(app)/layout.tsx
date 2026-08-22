@@ -26,10 +26,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const nav = NAV[session.role] ?? [];
 
+  function handleLogout() {
+    logout();
+    router.replace('/login');
+  }
+
   return (
     <RequireAuth>
-      <div className="flex min-h-screen bg-zinc-950 text-zinc-100">
-        <aside className="flex w-64 shrink-0 flex-col border-r border-zinc-800/80 bg-zinc-900/50">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100">
+        <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-zinc-800/80 bg-zinc-900/50">
           <div className="px-6 py-5">
             <Link
               href={DASHBOARD_PATHS[session.role] ?? '/'}
@@ -63,7 +68,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </button>
               <button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 className="flex-1 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-red-500 hover:text-red-300"
               >
                 Log out
@@ -71,11 +76,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </aside>
-        <div className="flex min-h-0 flex-1 flex-col">
-          <header className="flex items-center justify-end gap-3 border-b border-zinc-800/80 px-6 py-3">
+        <div className="ml-64 flex min-h-screen flex-col">
+          <header className="sticky top-0 z-30 flex items-center justify-end gap-3 border-b border-zinc-800/80 bg-zinc-950/90 px-6 py-3 backdrop-blur">
             <NotificationsDrawer />
           </header>
-          <main className="flex-1 overflow-y-auto p-8">{children}</main>
+          <main className="flex-1 p-8">{children}</main>
         </div>
       </div>
     </RequireAuth>
