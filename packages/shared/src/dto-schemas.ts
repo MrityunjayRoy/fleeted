@@ -93,6 +93,19 @@ export const RideOfferDtoSchema = z.object({
   rideId: z.string(),
   vendorId: z.string(),
   vendor: VendorDtoSchema,
+  ride: z
+    .object({
+      id: z.string(),
+      status: RideStatusSchema,
+      model: CarModelDtoSchema,
+      pickup: z.string(),
+      dropoff: z.string(),
+      pickupTime: isoDateTime,
+      distanceKm: z.number().positive(),
+      price: z.number().positive(),
+      notes: z.string().optional(),
+    })
+    .optional(),
   vendorCar: VendorCarDtoSchema.optional(),
   chauffeur: ChauffeurDtoSchema.optional(),
   status: OfferStatusSchema,
@@ -108,6 +121,9 @@ export const AuthResponseSchema = z.object({
   role: RoleSchema,
   userId: z.string(),
   displayName: z.string(),
+  customerId: z.string().optional(),
+  vendorId: z.string().optional(),
+  chauffeurId: z.string().optional(),
 });
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 
@@ -115,6 +131,9 @@ export const MeResponseSchema = z.object({
   role: RoleSchema,
   userId: z.string(),
   displayName: z.string(),
+  customerId: z.string().optional(),
+  vendorId: z.string().optional(),
+  chauffeurId: z.string().optional(),
 });
 export type MeResponse = z.infer<typeof MeResponseSchema>;
 

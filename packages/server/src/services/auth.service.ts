@@ -34,6 +34,7 @@ export class DefaultAuthService implements AuthService {
       role: account.role,
       userId: account.id,
       displayName: account.name,
+      ...scopedIds(account),
     };
   }
 
@@ -58,5 +59,18 @@ function toMeResponse(account: Account): MeResponse {
     role: account.role,
     userId: account.id,
     displayName: account.name,
+    ...scopedIds(account),
+  };
+}
+
+function scopedIds(account: Account): {
+  customerId?: string;
+  vendorId?: string;
+  chauffeurId?: string;
+} {
+  return {
+    ...(account.userId !== undefined ? { customerId: account.userId } : {}),
+    ...(account.vendorId !== undefined ? { vendorId: account.vendorId } : {}),
+    ...(account.chauffeurId !== undefined ? { chauffeurId: account.chauffeurId } : {}),
   };
 }

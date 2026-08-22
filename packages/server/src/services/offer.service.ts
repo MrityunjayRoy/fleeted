@@ -21,6 +21,7 @@ export interface AcceptOfferInput {
 export interface OfferService {
   accept(offerId: string, vendorId: string, input: AcceptOfferInput): Promise<RideOffer>;
   rejectRemaining(rideId: string, winningVendorId: string): Promise<void>;
+  reject(offerId: string, vendorId: string): Promise<RideOffer>;
   getById(id: string): Promise<RideOfferWithDetails | null>;
   listByVendor(vendorId: string): Promise<RideOfferWithDetails[]>;
 }
@@ -108,6 +109,18 @@ export class DefaultOfferService implements OfferService {
       offers.map((offer) => this.rideOffers.findWithDetails(offer.id)),
     );
     return detailed.filter((item): item is RideOfferWithDetails => item !== null);
+  }
+
+  async reject(offerId: string, vendorId: string): Promise<RideOffer> {
+    const offer = await this.rideOffers.findById(offerId);
+    if (!offer) throw new NotFoundError(`No offer with id "${offerId}"`);
+    if (offer.vendorId !== vendorId) {
+      throw new InsufficientVendorAccessError('This offer belongs to another vendor');
+    }
+    if (offer.status !== 'PENDING') {
+      throw new OfferNotPendingError(`Offer is in status ${offer.status}, not PENDING`);
+    }
+    return this.rideOffers.reject(offerId, new Date().toISOString());
   }
 
   async rejectRemaining(rideId: string, winningVendorId: string): Promise<void> {

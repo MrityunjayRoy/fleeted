@@ -28,4 +28,13 @@ export class OfferController {
     if (!detail) throw new NotFoundError(`No offer with id "${accepted.id}"`);
     res.json(toRideOfferDto(detail));
   };
+
+  reject = async (req: Request, res: Response): Promise<void> => {
+    const vendorId = req.auth?.vendorId;
+    if (vendorId === undefined) throw new NotFoundError('Vendor account has no vendor profile');
+    await this.offers.reject(req.params.id as string, vendorId);
+    const detail = await this.offers.getById(req.params.id as string);
+    if (!detail) throw new NotFoundError(`No offer with id "${req.params.id}"`);
+    res.json(toRideOfferDto(detail));
+  };
 }

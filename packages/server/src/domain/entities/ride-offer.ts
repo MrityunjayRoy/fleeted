@@ -1,6 +1,8 @@
 import type { OfferStatus } from '@fleeted/shared';
 
+import type { CarModel } from './car-model.js';
 import type { Chauffeur } from './chauffeur.js';
+import type { Ride } from './ride.js';
 import type { VendorCar } from './vendor-car.js';
 import type { Vendor } from './vendor.js';
 
@@ -22,6 +24,8 @@ export type NewRideOffer = Omit<RideOffer, 'id'>;
 export interface RideOfferWithDetails {
   offer: RideOffer;
   vendor: Vendor;
+  ride: Ride | null;
+  model: CarModel | null;
   vendorCar: VendorCar | null;
   chauffeur: Chauffeur | null;
 }

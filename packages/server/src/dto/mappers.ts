@@ -71,11 +71,26 @@ export function toCustomerSummaryDto(user: User): CustomerSummaryDto {
 }
 
 export function toRideOfferDto(detail: RideOfferWithDetails): RideOfferDto {
+  const ride =
+    detail.ride !== null && detail.model !== null
+      ? {
+          id: detail.ride.id,
+          status: detail.ride.status,
+          model: toCarModelDto(detail.model),
+          pickup: detail.ride.pickup,
+          dropoff: detail.ride.dropoff,
+          pickupTime: detail.ride.pickupTime,
+          distanceKm: detail.ride.distanceKm,
+          price: detail.ride.price,
+          ...(detail.ride.notes !== undefined ? { notes: detail.ride.notes } : {}),
+        }
+      : undefined;
   return {
     id: detail.offer.id,
     rideId: detail.offer.rideId,
     vendorId: detail.offer.vendorId,
     vendor: toVendorDto(detail.vendor),
+    ...(ride !== undefined ? { ride } : {}),
     ...(detail.vendorCar !== null ? { vendorCar: toVendorCarDto(detail.vendorCar) } : {}),
     ...(detail.chauffeur !== null ? { chauffeur: toChauffeurDto(detail.chauffeur) } : {}),
     status: detail.offer.status,

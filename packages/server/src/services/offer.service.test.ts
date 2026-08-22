@@ -33,6 +33,38 @@ describe('OfferService', () => {
     await seed(container);
   });
 
+  it('lists vendor offers with embedded ride and model details', async () => {
+    const { ride } = await createSClassRide(container);
+
+    const offers = await container.services.offers.listByVendor('vendor-company');
+    const offer = offers.find((o) => o.offer.rideId === ride.id);
+    if (!offer) throw new Error('no company offer');
+
+    expect(offer.ride).not.toBeNull();
+    expect(offer.ride?.id).toBe(ride.id);
+    expect(offer.ride?.pickup).toBe('Taj Palace, Mumbai');
+    expect(offer.ride?.price).toBe(ride.price);
+    expect(offer.model?.name).toBe('Mercedes S-Class');
+    expect(offer.model?.basePrice).toBe(25000);
+  });
+
+  it('vendor rejects a pending offer', async () => {
+    const { offers } = await createSClassRide(container);
+    const offer = offers.find((o) => o.vendorId === 'vendor-mumbai-luxury');
+    if (!offer) throw new Error('no mumbai offer');
+
+    const rejected = await container.services.offers.reject(offer.id, 'vendor-mumbai-luxury');
+    expect(rejected.status).toBe('REJECTED');
+    expect(rejected.rejectedAt).toBeTruthy();
+
+    await expect(
+      container.services.offers.reject(offer.id, 'vendor-mumbai-luxury'),
+    ).rejects.toBeInstanceOf(OfferNotPendingError);
+    await expect(
+      container.services.offers.reject(offer.id, 'vendor-royal-rides'),
+    ).rejects.toBeInstanceOf(InsufficientVendorAccessError);
+  });
+
   it('accepts a pending offer and locks car and chauffeur', async () => {
     const { offers } = await createSClassRide(container);
     const offer = offers.find((o) => o.vendorId === 'vendor-company');

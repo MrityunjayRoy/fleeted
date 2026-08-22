@@ -18,6 +18,7 @@ export function createOfferRouter(offers: OfferService): Router {
     validate(AcceptOfferRequestSchema),
     controller.accept,
   );
+  router.post('/:id/reject', requireRole('VENDOR'), controller.reject);
 
   return router;
 }
