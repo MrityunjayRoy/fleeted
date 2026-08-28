@@ -131,6 +131,10 @@ export function toRideDto(detail: RideWithParticipants): RideDto {
   };
 }
 
+export function toOpsRideDto(detail: RideWithParticipants): RideDto {
+  return { ...toRideDto(detail), offers: detail.offers.map(toRideOfferDto) };
+}
+
 export function toNotificationDto(notification: Notification): NotificationDto {
   return {
     id: notification.id,

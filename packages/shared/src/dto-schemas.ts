@@ -68,26 +68,6 @@ export const RideAssignmentDtoSchema = z.object({
 });
 export type RideAssignmentDto = z.infer<typeof RideAssignmentDtoSchema>;
 
-export const RideDtoSchema = z.object({
-  id: z.string(),
-  status: RideStatusSchema,
-  price: z.number().positive(),
-  pickup: z.string(),
-  dropoff: z.string(),
-  pickupTime: isoDateTime,
-  distanceKm: z.number().positive(),
-  notes: z.string().optional(),
-  model: CarModelDtoSchema,
-  customer: CustomerSummaryDtoSchema,
-  assignment: RideAssignmentDtoSchema.optional(),
-  createdAt: isoDateTime,
-  confirmedAt: isoDateTime.optional(),
-  startedAt: isoDateTime.optional(),
-  completedAt: isoDateTime.optional(),
-  cancelledAt: isoDateTime.optional(),
-});
-export type RideDto = z.infer<typeof RideDtoSchema>;
-
 export const RideOfferDtoSchema = z.object({
   id: z.string(),
   rideId: z.string(),
@@ -115,6 +95,27 @@ export const RideOfferDtoSchema = z.object({
   releasedAt: isoDateTime.optional(),
 });
 export type RideOfferDto = z.infer<typeof RideOfferDtoSchema>;
+
+export const RideDtoSchema = z.object({
+  id: z.string(),
+  status: RideStatusSchema,
+  price: z.number().positive(),
+  pickup: z.string(),
+  dropoff: z.string(),
+  pickupTime: isoDateTime,
+  distanceKm: z.number().positive(),
+  notes: z.string().optional(),
+  model: CarModelDtoSchema,
+  customer: CustomerSummaryDtoSchema,
+  assignment: RideAssignmentDtoSchema.optional(),
+  offers: z.array(RideOfferDtoSchema).optional(),
+  createdAt: isoDateTime,
+  confirmedAt: isoDateTime.optional(),
+  startedAt: isoDateTime.optional(),
+  completedAt: isoDateTime.optional(),
+  cancelledAt: isoDateTime.optional(),
+});
+export type RideDto = z.infer<typeof RideDtoSchema>;
 
 export const AuthResponseSchema = z.object({
   token: z.string(),
