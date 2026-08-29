@@ -42,6 +42,7 @@ describe('REST API (HTTP)', () => {
   let customer: Client;
   let vendor: Client;
   let ops: Client;
+  let driver: Client;
 
   beforeEach(async () => {
     container = createContainer(':memory:', { runMigrations: true, jwtSecret: SECRET });
@@ -53,6 +54,7 @@ describe('REST API (HTTP)', () => {
     customer = await login(baseUrl, 'CUSTOMER', 'Priya Nair');
     vendor = await login(baseUrl, 'VENDOR', 'Royal Rides India');
     ops = await login(baseUrl, 'OPS', 'Ananya Desai');
+    driver = await login(baseUrl, 'DRIVER', 'Rohan Verma');
   });
 
   afterEach(() => {
@@ -168,6 +170,79 @@ describe('REST API (HTTP)', () => {
 
     const vendorOnOtherFleet = await vendor.get('/api/vendors/vendor-company/cars');
     expect(vendorOnOtherFleet.status).toBe(403);
+  });
+
+  it('enforces the role matrix across protected routes', async () => {
+    const future = new Date(Date.now() + 3_600_000).toISOString();
+    const rideBody = {
+      modelId: 'model-rolls-ghost',
+      pickup: 'P',
+      dropoff: 'Q',
+      pickupTime: future,
+      distanceKm: 5,
+    };
+
+    const forbidden: Array<[Client, 'GET' | 'POST', string, unknown?]> = [
+      [vendor, 'POST', '/api/rides', rideBody],
+      [ops, 'POST', '/api/rides', rideBody],
+      [driver, 'POST', '/api/rides', rideBody],
+      [driver, 'POST', '/api/offers/o1/accept', { vendorCarId: 'c1', chauffeurId: 'd1' }],
+      [customer, 'POST', '/api/offers/o1/accept', { vendorCarId: 'c1', chauffeurId: 'd1' }],
+      [ops, 'POST', '/api/offers/o1/accept', { vendorCarId: 'c1', chauffeurId: 'd1' }],
+      [customer, 'POST', '/api/offers/o1/reject'],
+      [customer, 'POST', '/api/ops/offers/o1/approve'],
+      [vendor, 'POST', '/api/ops/offers/o1/approve'],
+      [driver, 'GET', '/api/ops/rides'],
+      [ops, 'POST', '/api/driver/rides/r1/start'],
+      [customer, 'GET', '/api/vendors/vendor-royal-rides/cars'],
+      [
+        customer,
+        'POST',
+        '/api/vendors/vendor-royal-rides/cars/car-royal-1/availability',
+        { isAvailable: true },
+      ],
+    ];
+
+    for (const [client, method, path, payload] of forbidden) {
+      const res = method === 'GET' ? await client.get(path) : await client.post(path, payload);
+      expect(res.status).toBe(403);
+    }
+
+    for (const [client, method, path] of [
+      [customer, 'GET', '/api/rides/mine'],
+      [vendor, 'GET', '/api/rides/mine'],
+      [driver, 'GET', '/api/rides/mine'],
+      [driver, 'GET', '/api/notifications'],
+      [ops, 'GET', '/api/notifications'],
+    ] as Array<[Client, 'GET' | 'POST', string]>) {
+      const res = method === 'GET' ? await client.get(path) : await client.post(path);
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it('boots cleanly without seed data', async () => {
+    const empty = createContainer(':memory:', { runMigrations: true, jwtSecret: SECRET });
+    const app = createApp(empty);
+    const emptyServer = app.listen(0);
+    const { port } = emptyServer.address() as AddressInfo;
+    const url = `http://localhost:${port}`;
+    try {
+      const catalog = await fetch(`${url}/api/car-models`);
+      expect(catalog.status).toBe(200);
+      expect((await catalog.json()) as unknown[]).toHaveLength(0);
+
+      const login = await fetch(`${url}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'CUSTOMER', name: 'Ghost User' }),
+      });
+      expect(login.status).toBe(401);
+      const body = (await login.json()) as { error: { code: string; message: string } };
+      expect(body.error.code).toBe('UNAUTHORIZED');
+      expect(body.error.message).toContain('No CUSTOMER account');
+    } finally {
+      emptyServer.close();
+    }
   });
 
   it('returns 400 for invalid input', async () => {

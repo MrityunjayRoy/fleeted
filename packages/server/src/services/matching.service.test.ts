@@ -63,6 +63,37 @@ describe('MatchingService', () => {
     }
   });
 
+  it('handles the zero-match case: no vendor qualified, no offers created', async () => {
+    const allCarIds = [
+      'car-company-1',
+      'car-company-2',
+      'car-company-3',
+      'car-company-4',
+      'car-company-5',
+      'car-company-6',
+      'car-mumbai-1',
+      'car-mumbai-2',
+      'car-mumbai-3',
+      'car-royal-1',
+      'car-royal-2',
+      'car-royal-3',
+      'car-royal-4',
+      'car-heritage-1',
+      'car-heritage-2',
+      'car-heritage-3',
+    ];
+    for (const id of allCarIds) {
+      await container.repos.vendorCars.updateAvailability(id, false);
+    }
+
+    const result = await createSClassRide(container);
+
+    expect(result.matchedVendorIds).toHaveLength(0);
+    expect(result.ride.status).toBe('PENDING');
+    const offers = await container.repos.rideOffers.listByRideId(result.ride.id);
+    expect(offers).toHaveLength(0);
+  });
+
   it('emits ride:created notifications for matched vendors', async () => {
     await createSClassRide(container);
     await flush();
