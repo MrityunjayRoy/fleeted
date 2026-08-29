@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/run-seed.ts"
@@ -32,6 +33,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.2.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "drizzle-kit": "^0.31.10",
     "socket.io-client": "^4.8.3",
     "tsx": "^4.23.12",
